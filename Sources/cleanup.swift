@@ -1,5 +1,8 @@
-import Foundation
+// This file is based on SwiftDiff by Bastian Mueller. Licensed under the Apache License, Version 2.0.
+// Source: https://github.com/turbolent/SwiftDiff
+// Modified by Petr Kvasnikov on 03.02.2024: fixed issues related to 'Characters' and 'Substrings'.
 
+import Foundation
 
 func cleanupMerge(diffs: [Diff]) -> [Diff] {
     var diffs = diffs
@@ -45,8 +48,8 @@ func cleanupMerge(diffs: [Diff]) -> [Diff] {
                         // Factor out any common suffixies.
                         let suffixLength = commonSuffixLength(text1: textInsert, text2: textDelete)
                         if suffixLength != 0 {
-                            let insertLength = textInsert.characters.count
-                            let deleteLength = textDelete.characters.count
+                            let insertLength = textInsert.count
+                            let deleteLength = textDelete.count
 
                             let diff = diffs[pointer]
                             diffs[pointer] = diff.with(text:
@@ -106,8 +109,8 @@ func cleanupMerge(diffs: [Diff]) -> [Diff] {
         while pointer < diffs.count - 1 {
             if case .equal = diffs[pointer - 1], case .equal = diffs[pointer + 1] {
                 // This is a single edit surrounded by equalities.
-                let suffixStart = diffs[pointer].text.characters.count
-                    - diffs[pointer - 1].text.characters.count
+                let suffixStart = diffs[pointer].text.count
+                    - diffs[pointer - 1].text.count
                 let suffix = diffs[pointer].text.substring(from: suffixStart)
                 let previousDiff = diffs[pointer - 1]
                 if suffix == previousDiff.text {
@@ -116,8 +119,8 @@ func cleanupMerge(diffs: [Diff]) -> [Diff] {
                     let nextDiff = diffs[pointer + 1]
                     diffs[pointer] = diff.with(text:
                         previousDiff.text
-                            + diff.text.substring(to: diff.text.characters.count
-                                - previousDiff.text.characters.count))
+                            + diff.text.substring(to: diff.text.count
+                                - previousDiff.text.count))
                     diffs[pointer + 1] =
                         nextDiff.with(text: previousDiff.text + nextDiff.text)
                     diffs.remove(at: pointer - 1)
@@ -125,14 +128,14 @@ func cleanupMerge(diffs: [Diff]) -> [Diff] {
                 } else {
                     let diff = diffs[pointer]
                     let nextDiff = diffs[pointer + 1]
-                    let length = nextDiff.text.characters.count
+                    let length = nextDiff.text.count
                     let prefix = diff.text.substring(to: length)
                     if prefix == nextDiff.text {
                         // Shift the edit over the next equality.
                         diffs[pointer - 1] =
                             previousDiff.with(text: previousDiff.text + nextDiff.text)
                         diffs[pointer] = diffs[pointer].with(text:
-                            diffs[pointer].text.substring(from: nextDiff.text.characters.count) +
+                            diffs[pointer].text.substring(from: nextDiff.text.count) +
                                 nextDiff.text)
                         diffs.remove(at: pointer + 1)
                         changes = true
@@ -165,9 +168,9 @@ func cleanupSemanticLossless(diffs: [Diff]) -> [Diff] {
             // First, shift the edit as far left as possible.
             let commonOffset = commonSuffixLength(text1: equality1, text2: edit)
             if commonOffset != 0 {
-                let editLength = edit.characters.count
+                let editLength = edit.count
                 let commonString = edit.substring(from: editLength - commonOffset)
-                equality1 = equality1.substring(to: equality1.characters.count - commonOffset)
+                equality1 = equality1.substring(to: equality1.count - commonOffset)
                 edit = commonString + edit.substring(to: editLength - commonOffset)
                 equality2 = commonString + equality2
             }
@@ -178,12 +181,12 @@ func cleanupSemanticLossless(diffs: [Diff]) -> [Diff] {
             var bestEquality2 = equality2
             var bestScore = cleanupSemanticScore(text1: equality1, text2: edit) +
                 cleanupSemanticScore(text1: edit, text2: equality2)
-            while edit.characters.first == equality2.characters.first {
-                if let first = edit.characters.first {
+            while edit.first == equality2.first {
+                if let first = edit.first {
                     equality1.append(first)
                 }
                 edit = edit.substring(from: 1)
-                if let char = equality2.characters.first {
+                if let char = equality2.first {
                     edit.append(char)
                 }
                 equality2 = equality2.substring(from: 1)
@@ -303,7 +306,7 @@ public func cleanupSemantic(diffs: [Diff]) -> [Diff] {
 
     while pointer < diffs.count {
         let diff = diffs[pointer]
-        let diffTextLength = diff.text.characters.count
+        let diffTextLength = diff.text.count
 
         if case .equal(let text) = diff {
             // Equality found.
@@ -325,7 +328,7 @@ public func cleanupSemantic(diffs: [Diff]) -> [Diff] {
             // Eliminate an equality that is smaller or equal to the edits on both
             // sides of it.
             if let equality = lastEquality {
-                let length = equality.characters.count
+                let length = equality.count
                 if length <= max(lengthInsertions1,
                                  lengthDeletions1)
                     && length <= max(lengthInsertions2,
@@ -377,8 +380,8 @@ public func cleanupSemantic(diffs: [Diff]) -> [Diff] {
         if case .delete(let deletion) = diffs[pointer - 1],
             case .insert(let insertion) = diffs[pointer]
         {
-            let deletionLength = deletion.characters.count
-            let insertionLength = insertion.characters.count
+            let deletionLength = deletion.count
+            let insertionLength = insertion.count
 
             let overlapLength1 = commonOverlapLength(text1: deletion, text2: insertion)
             let overlapLength2 = commonOverlapLength(text1: insertion, text2: deletion)

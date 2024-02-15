@@ -1,5 +1,8 @@
-import CoreFoundation
+// This file is based on SwiftDiff by Bastian Mueller. Licensed under the Apache License, Version 2.0.
+// Source: https://github.com/turbolent/SwiftDiff
+// Modified by Petr Kvasnikov on 03.02.2024: fixed issues related to 'Characters' and 'Substrings'.
 
+import CoreFoundation
 
 public enum Diff: Equatable {
     case equal(String)
@@ -87,8 +90,8 @@ func diff(text1: String, text2: String,
     // Trim off common suffix (speedup).
     let suffixLength = commonSuffixLength(text1: text1, text2: text2)
     // NOTE: length of text1 and text2 without prefix
-    let length1 = text1.characters.count
-    let length2 = text2.characters.count
+    let length1 = text1.count
+    let length2 = text2.count
     let commonSuffix = text1.substring(from: length1 - suffixLength)
     text1 = text1.substring(to: length1 - suffixLength)
     text2 = text2.substring(to: length2 - suffixLength)
@@ -135,10 +138,10 @@ func diffMiddle(text1: String, length1: Int,
     if let range = longText.range(of: shortText) {
         // Shorter text is inside the longer text (speedup).
         let commonStart = range.lowerBound
-        let prefix = longText.substring(to: commonStart)
+        let prefix = String(longText[..<commonStart])
         let suffixStart = longText.index(commonStart,
                                          offsetBy: shortTextLength)
-        let suffix = longText.substring(from: suffixStart)
+        let suffix = String(longText[suffixStart...])
         if length1 <= length2 {
             return [.insert(prefix), .equal(shortText), .insert(suffix)]
         } else {
@@ -199,8 +202,8 @@ func == (lhs: HalfMatch, rhs: HalfMatch) -> Bool {
 func halfMatch(text1: String, text2: String,
                length1: Int? = nil, length2: Int? = nil) -> HalfMatch? {
 
-    let length1 = length1 ?? text1.characters.count
-    let length2 = length2 ?? text2.characters.count
+    let length1 = length1 ?? text1.count
+    let length2 = length2 ?? text2.count
 
     let (longText, longLength, shortText, shortLength) = length1 > length2
         ? (text1, length1, text2, length2)
@@ -232,7 +235,7 @@ func halfMatch(text1: String, text2: String,
         case (.some(let halfMatch1), .some(let halfMatch2)):
             // Both matched.  Select the longest.
             let firstIsLonger =
-                halfMatch1.midCommon.characters.count > halfMatch2.midCommon.characters.count
+                halfMatch1.midCommon.count > halfMatch2.midCommon.count
             finalHalfMatch = firstIsLonger ? halfMatch1 : halfMatch2
     }
 
@@ -268,7 +271,7 @@ func halfMatchI(longText: String, longLength: Int, shortText: String, i: Int) ->
         if bestCommonLength < suffixLength + prefixLength {
             bestCommon = shortText[(offset - suffixLength)..<offset]
                 + shortText[offset..<(offset + prefixLength)]
-            bestCommonLength = bestCommon.characters.count
+            bestCommonLength = bestCommon.count
             bestLongTextA = longText.substring(to: i - suffixLength)
             bestLongTextB = longText.substring(from: i + prefixLength)
             bestShortTextA = shortText.substring(to: offset - suffixLength)

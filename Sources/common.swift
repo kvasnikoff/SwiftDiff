@@ -1,16 +1,19 @@
-import Foundation
+// This file is based on SwiftDiff by Bastian Mueller. Licensed under the Apache License, Version 2.0.
+// Source: https://github.com/turbolent/SwiftDiff
+// Modified by Petr Kvasnikov on 03.02.2024: fixed issues related to 'Characters' and 'Substrings'.
 
+import Foundation
 
 func commonPrefixLength(text1: String, text2: String) -> Int {
     // Quick check for common null cases.
-    if text1.isEmpty || text2.isEmpty || text1.characters.first != text2.characters.first {
+    if text1.isEmpty || text2.isEmpty || text1.first != text2.first {
         return 0
     }
 
     // Binary search.
     // Performance analysis: http://neil.fraser.name/news/2007/10/09/
     var pointerMin = 0
-    var pointerMax = min(text1.characters.count, text2.characters.count)
+    var pointerMax = min(text1.count, text2.count)
     var pointerMid = pointerMax
     var pointerStart = 0
     while pointerMin < pointerMid {
@@ -35,10 +38,10 @@ func commonSuffixLength(text1: String, text2: String) -> Int {
         return 0
     }
 
-    let length1 = text1.characters.count
-    let length2 = text2.characters.count
+    let length1 = text1.count
+    let length2 = text2.count
 
-    if text1.characters.last != text2.characters.last {
+    if text1.last != text2.last {
         return 0
     }
 
@@ -68,8 +71,8 @@ func commonOverlapLength(text1: String, text2: String) -> Int {
     var text2 = text2
 
     // Cache the text lengths to prevent multiple calls.
-    let length1 = text1.characters.count
-    let length2 = text2.characters.count
+    let length1 = text1.count
+    let length2 = text2.count
 
     // Eliminate the null case.
     if length1 == 0 || length2 == 0 {
